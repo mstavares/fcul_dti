@@ -212,6 +212,41 @@ public class BFTMap<K, V> implements Map<K, V> {
         }
     }
 
+    public Set<K> getChildren(Object key) {
+        try {
+            ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+            ObjectOutputStream objOut = new ObjectOutputStream(byteOut);
+
+            objOut.writeObject(BFTMapRequestType.CHILDREN);
+            objOut.writeObject(key);
+
+            objOut.flush();
+            byteOut.flush();
+
+            //invokes BFT-SMaRt
+            byte[] rep = serviceProxy.invokeUnordered(byteOut.toByteArray());
+
+            objOut.close();
+            byteOut.close();
+
+            if (rep.length == 0) {
+                return null;
+            }
+
+            ByteArrayInputStream byteIn = new ByteArrayInputStream(rep);
+            ObjectInputStream objIn = new ObjectInputStream(byteIn);
+
+            Set keyset = (Set) objIn.readObject();
+
+            objIn.close();
+            byteIn.close();
+
+            return keyset;
+        } catch (ClassNotFoundException | IOException ex) {
+            return null;
+        }
+    }
+
     @Override
     public boolean containsKey(Object key) {
         throw new UnsupportedOperationException("You are supposed to implement this method :)");

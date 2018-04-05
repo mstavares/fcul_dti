@@ -21,13 +21,12 @@ import bftsmart.tom.server.defaultservices.DefaultSingleRecoverable;
 
 public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
 
-    TreeMap<K, V> replicaMap = null;
+    Node root = new Node();
     ServiceReplica replica = null;
 
     //The constructor passes the id of the server to the super class
     public BFTMapServer(int id) {
-
-        replicaMap = new TreeMap<>();
+        root.addNode("/", null);
         replica = new ServiceReplica(id, this, this);
     }
 
@@ -57,16 +56,29 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
             switch (cmd) {
                 //write operations on the map
                 case PUT: {
+                    K key = (K) objIn.readObject();
+                    V value = (V) objIn.readObject();
+                    root.addNode(key.toString(), value.toString());
+                    V ret = value;
+                    if (ret != null) {
+                        objOut.writeObject(ret);
+                        reply = byteOut.toByteArray();
+                    }
+                    break;
+                }
+                case SEQUENTIAL: {
 
+                    /*
                     K key = (K) objIn.readObject();
                     V value = (V) objIn.readObject();
 
-                    V ret = replicaMap.put(key, value);
+                    V ret = root.put(key, value);
 
                     if (ret != null) {
                         objOut.writeObject(ret);
                         reply = byteOut.toByteArray();
                     }
+                    */
                     break;
                 }
             }
@@ -101,44 +113,25 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
             System.out.println("Ordered execution of a "+cmd+" from "+msgCtx.getSender());
             
             switch (cmd) {
-                //read operations on the map
                 case GET: {
                     K key = (K) objIn.readObject();
-                    V ret = replicaMap.get(key);
-
+                    V ret =  (V) root.getValue(key.toString());
                     if (ret != null) {
                         objOut.writeObject(ret);
                         reply = byteOut.toByteArray();
                     }
                     break;
                 }
-				case SIZE: {
-                    objOut.writeObject(replicaMap.size());
+                case CHILDREN: {
+                    K key = (K) objIn.readObject();
+                    HashSet<K> keyset = new HashSet<>(root.getChildren(key.toString()));objOut.writeObject(keyset);
+                    objOut.writeObject(keyset);
                     reply = byteOut.toByteArray();
                     break;
                 }
-                case KEYSET: {
-                    HashSet<K> keyset = new HashSet<>(replicaMap.keySet());objOut.writeObject(keyset);
-                    reply = byteOut.toByteArray();
-                    break;
-                }
-
                 case REMOVE: {
                     K key = (K) objIn.readObject();
-                    V ret = null;
-
-                    List<K> toRemove = new ArrayList<>();
-                    for(Map.Entry<K,V> entry : replicaMap.entrySet()) {
-                        if(entry.getKey().toString().startsWith(key.toString())) {
-                            System.out.println(entry.getValue().toString());
-                            toRemove.add(entry.getKey());
-                            ret = (V)"teste";
-                        }
-                    }
-                    for(K remove : toRemove) {
-                        replicaMap.remove(remove);
-                    }
-
+                    V ret = (V) root.deleteNode(key.toString());
                     if (ret != null) {
                         objOut.writeObject(ret);
                         reply = byteOut.toByteArray();
@@ -167,7 +160,7 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
         try {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             ObjectOutput out = new ObjectOutputStream(bos);
-            out.writeObject(replicaMap);
+            out.writeObject(root);
             out.flush();
             bos.flush();
             out.close();
@@ -185,7 +178,7 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
             // serialize to byte array and return
             ByteArrayInputStream bis = new ByteArrayInputStream(state);
             ObjectInput in = new ObjectInputStream(bis);
-            replicaMap = (TreeMap<K, V>) in.readObject();
+            root = (Node) in.readObject();
             in.close();
             bis.close();
         } catch (ClassNotFoundException | IOException ex) {

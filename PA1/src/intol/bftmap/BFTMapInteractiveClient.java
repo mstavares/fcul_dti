@@ -23,10 +23,10 @@ public class BFTMapInteractiveClient {
 
         System.out.println("\nCommands:\n");
         System.out.println("\tPUT: Insert value into the map");
+        System.out.println("\tSEQUENCIAL: Insert value into the map");
         System.out.println("\tGET: Retrieve value from the map");
-        System.out.println("\tSIZE: Retrieve the size of the map");
+        System.out.println("\tCHILDREN: Retrieve the size of the map");
         System.out.println("\tREMOVE: Removes the value associated with the supplied key");
-        System.out.println("\tKEYSET: List all keys available in the table");
         System.out.println("\tEXIT: Terminate this client\n");
 
         while (true) {
@@ -70,6 +70,20 @@ public class BFTMapInteractiveClient {
                 String value = bftMap.get(key);
 
                 System.out.println("\nValue associated with " + key + ": " + value + "\n");
+
+            } else if (cmd.equalsIgnoreCase("CHILDREN")) {
+
+                try {
+                    System.out.print("Enter a node name: ");
+                    key = sc.nextLine();
+
+                } catch (NumberFormatException | InputMismatchException e) {
+                    System.out.println("\tThe key is supposed to be an integer!\n");
+                    continue;
+                }
+
+                Set keySet = bftMap.getChildren(key);
+                System.out.println("\n" + key + " content: " + keySet );
 
             } else if (cmd.equalsIgnoreCase("KEYSET")) {
 
