@@ -67,18 +67,16 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
                     break;
                 }
                 case SEQUENTIAL: {
-
-                    /*
                     K key = (K) objIn.readObject();
                     V value = (V) objIn.readObject();
 
-                    V ret = root.put(key, value);
+                    V ret = (V) root.addNodeSequential(key.toString(), value.toString());
 
                     if (ret != null) {
                         objOut.writeObject(ret);
                         reply = byteOut.toByteArray();
                     }
-                    */
+
                     break;
                 }
             }
@@ -132,6 +130,7 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
                 case REMOVE: {
                     K key = (K) objIn.readObject();
                     V ret = (V) root.deleteNode(key.toString());
+
                     if (ret != null) {
                         objOut.writeObject(ret);
                         reply = byteOut.toByteArray();

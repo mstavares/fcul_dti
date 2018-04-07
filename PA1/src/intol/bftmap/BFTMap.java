@@ -104,6 +104,39 @@ public class BFTMap<K, V> implements Map<K, V> {
         }
     }
 
+    public V putSequential(K key, V value) {
+        try {
+            ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+            ObjectOutputStream objOut = new ObjectOutputStream(byteOut);
+            objOut.writeObject(BFTMapRequestType.SEQUENTIAL);
+            objOut.writeObject(key);
+            objOut.writeObject(value);
+
+            objOut.flush();
+            byteOut.flush();
+
+            byte[] rep = serviceProxy.invokeOrdered(byteOut.toByteArray());
+
+            if (rep.length == 0) {
+                return null;
+            }
+
+            objOut.close();
+            byteOut.close();
+
+            ByteArrayInputStream byteIn = new ByteArrayInputStream(rep);
+            ObjectInputStream objIn = new ObjectInputStream(byteIn);
+            V val = (V) objIn.readObject();
+
+            byteIn.close();
+            objIn.close();
+
+            return val;
+        } catch (ClassNotFoundException | IOException ex) {
+            return null;
+        }
+    }
+
     @Override
     public int size() {
 		try {

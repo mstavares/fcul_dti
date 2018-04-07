@@ -71,6 +71,23 @@ public class BFTMapInteractiveClient {
 
                 System.out.println("\nValue associated with " + key + ": " + value + "\n");
 
+            } else if (cmd.equalsIgnoreCase("SEQUENTIAL")) {
+
+                //String key;
+                try {
+                    System.out.print("Enter a node name: ");
+                    key = sc.nextLine();
+                    //sc.nextLine();
+                } catch (NumberFormatException e) {
+                    System.out.println("\tThe key is supposed to be an integer!\n");
+                    continue;
+                }
+                System.out.print("Enter an alpha-numeric value: ");
+                String value = sc.nextLine();
+
+                //invokes the op on the servers
+                bftMap.putSequential(key, value);
+
             } else if (cmd.equalsIgnoreCase("CHILDREN")) {
 
                 try {
@@ -108,7 +125,7 @@ public class BFTMapInteractiveClient {
                 //invokes the op on the servers
                 String value = bftMap.remove(key);
 
-                System.out.println("\nValue associated with " + key + " was removed\n");
+                System.out.println("\nValue associated with " + value + " was removed\n");
 
             } else if (cmd.equalsIgnoreCase("SIZE")) {
 

@@ -1,20 +1,18 @@
 package intol.bftmap;
 
 import java.io.Serializable;
-import java.util.HashMap;
 import java.util.Set;
 import java.util.TreeMap;
 
 public class Node implements Serializable {
 
+    private static final int FIRST_SEQ = 1;
     private TreeMap<String, Node> nodes = new TreeMap<>();
     private String value;
     private String path;
-    private int counter;
+    private int counter = FIRST_SEQ;
 
-    public Node() {
-
-    }
+    public Node() {}
 
     public Node(String path) {
         this.path = path;
@@ -27,6 +25,17 @@ public class Node implements Serializable {
 
     public TreeMap<String, Node> getNodes() {
         return nodes;
+    }
+
+    public String addNodeSequential(String path, String value) {
+        for(int i = FIRST_SEQ; ; i++) {
+            String sequentialPath = path + i;
+            Node node = getNode(sequentialPath);
+            if(node == null) {
+                addNode(sequentialPath, value);
+                return sequentialPath;
+            }
+        }
     }
 
     public void addNode(String path, String value) {
@@ -95,14 +104,18 @@ public class Node implements Serializable {
         return node.nodes.keySet();
     }
 
-    public Boolean deleteNode(String path) {
+    public String deleteNode(String path) {
         Node node = getNode(path);
         Node motherNode = getMotherNode(path);
         if(node.nodes.isEmpty()) {
-            motherNode.nodes.remove(node.path);
-            return true;
+            if(motherNode != null) {
+                motherNode.nodes.remove(node.path);
+            } else {
+                nodes.remove(node.path);
+            }
+            return path + " was removed";
         }
-        return false;
+        return path + " was not removed, probably has children";
     }
 
     private Node getMotherNode(String path) {
