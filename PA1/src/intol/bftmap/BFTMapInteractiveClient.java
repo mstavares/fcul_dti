@@ -86,7 +86,8 @@ public class BFTMapInteractiveClient {
                 String value = sc.nextLine();
 
                 //invokes the op on the servers
-                bftMap.putSequential(key, value);
+                String name = bftMap.putSequential(key, value);
+                System.out.print("A node with name " + name + " was created");
 
             } else if (cmd.equalsIgnoreCase("CHILDREN")) {
 

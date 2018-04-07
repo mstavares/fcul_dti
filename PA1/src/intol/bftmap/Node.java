@@ -6,11 +6,10 @@ import java.util.TreeMap;
 
 public class Node implements Serializable {
 
-    private static final int FIRST_SEQ = 1;
+    private static final int FIRST_SEQ = 0;
     private TreeMap<String, Node> nodes = new TreeMap<>();
     private String value;
     private String path;
-    private int counter = FIRST_SEQ;
 
     public Node() {}
 
@@ -45,7 +44,7 @@ public class Node implements Serializable {
             String key = folders[i] + "/";
             if(node == null) {
                 if(!nodes.containsKey(key)) {
-                    nodes.put(key, new Node(key));
+                    nodes.put(key, new Node(key, value));
                     node = nodes.get(key);
                     if(i == folders.length - 1) {
                         node.value = value;
@@ -69,7 +68,7 @@ public class Node implements Serializable {
                 }
             } else {
                 if (!nodes.containsKey(key)) {
-                    nodes.put(key, new Node(key));
+                    nodes.put(key, new Node(key, value));
                 }
                 node = nodes.get(key);
             }
