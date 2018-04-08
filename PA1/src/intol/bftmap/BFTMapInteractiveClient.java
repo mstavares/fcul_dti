@@ -5,6 +5,39 @@
 package intol.bftmap;
 
 import java.io.IOException;
+<<<<<<< HEAD
+import java.util.HashMap;
+import java.util.InputMismatchException;
+import java.util.Map;
+import java.util.Scanner;
+import java.util.Set;
+
+public class BFTMapInteractiveClient extends Thread {
+	
+	private static NodeWatcher watcher;
+	
+	public void run() {
+		System.out.println("Starting notification thread...");
+		while(true) {
+			System.out.println("Going to check for updates");
+			watcher.checkForUpdates();
+			try {
+				Thread.sleep(10000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+    public static void main(String[] args) throws IOException {
+
+    	
+        int clientId = (args.length > 0) ? Integer.parseInt(args[0]) : 1001;
+        BFTMap<String, String> bftMap = new BFTMap<>(clientId);
+        watcher = new NodeWatcher(bftMap);
+        (new BFTMapInteractiveClient()).start();
+
+=======
 import java.util.InputMismatchException;
 import java.util.Scanner;
 
@@ -19,6 +52,7 @@ public class BFTMapInteractiveClient {
         BFTMap<String, String> bftMap = new BFTMap<>(clientId);
 
         //Console console = System.console();
+>>>>>>> fddb2451ceefcf4c7e7a6830270f4cfc51e22b08
         Scanner sc = new Scanner(System.in);
 
         System.out.println("\nCommands:\n");
@@ -27,6 +61,10 @@ public class BFTMapInteractiveClient {
         System.out.println("\tGET: Retrieve value from the map");
         System.out.println("\tCHILDREN: Retrieve the size of the map");
         System.out.println("\tREMOVE: Removes the value associated with the supplied key");
+<<<<<<< HEAD
+        System.out.println("\tWATCH: Create Watcher for a value");
+=======
+>>>>>>> fddb2451ceefcf4c7e7a6830270f4cfc51e22b08
         System.out.println("\tEXIT: Terminate this client\n");
 
         while (true) {
@@ -49,6 +87,10 @@ public class BFTMapInteractiveClient {
                 String value = sc.nextLine();
 
                 //invokes the op on the servers
+<<<<<<< HEAD
+              
+=======
+>>>>>>> fddb2451ceefcf4c7e7a6830270f4cfc51e22b08
                 bftMap.put(key, value);
 
                 System.out.println("\nkey-value pair added to the map\n");
@@ -128,7 +170,23 @@ public class BFTMapInteractiveClient {
 
                 System.out.println("\nValue associated with " + value + " was removed\n");
 
+<<<<<<< HEAD
+            } else if (cmd.equalsIgnoreCase("WATCH")) {
+            	 System.out.print("Enter a node name key: ");
+            	 key = sc.nextLine();
+            	 boolean result = watcher.registerNode(key);
+            	 if (result) {
+            		 System.out.println("\nCreated watcher for node with key " + key);
+            	 } else {
+            		 System.out.println("\nWatcher was not created. The node with key " + key + " does not exist.");
+            	 }
+            	
+            	
             } else if (cmd.equalsIgnoreCase("SIZE")) {
+            
+=======
+            } else if (cmd.equalsIgnoreCase("SIZE")) {
+>>>>>>> fddb2451ceefcf4c7e7a6830270f4cfc51e22b08
 
 				System.out.println("Size is: " + bftMap.size());
 
