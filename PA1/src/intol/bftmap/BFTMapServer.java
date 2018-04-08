@@ -25,17 +25,29 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
     ServiceReplica replica = null;
 
     //The constructor passes the id of the server to the super class
+<<<<<<< HEAD
+    public BFTMapServer(int id) throws IOException {
+=======
     public BFTMapServer(int id) {
+>>>>>>> fddb2451ceefcf4c7e7a6830270f4cfc51e22b08
         root.addNode("/", null);
         replica = new ServiceReplica(id, this, this);
     }
 
+<<<<<<< HEAD
+    public static void main(String[] args) throws NumberFormatException, IOException {
+=======
     public static void main(String[] args) {
+>>>>>>> fddb2451ceefcf4c7e7a6830270f4cfc51e22b08
         if (args.length < 1) {
             System.out.println("Use: java BFTMapServer <server id>");
             System.exit(-1);
         }
         new BFTMapServer<Integer, String>(Integer.parseInt(args[0]));
+<<<<<<< HEAD
+        
+=======
+>>>>>>> fddb2451ceefcf4c7e7a6830270f4cfc51e22b08
     }
 
     @Override
@@ -137,6 +149,14 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
                     }
                     break;
                 }
+<<<<<<< HEAD
+                case SIZE: {
+                	int ret = root.getNodes().size();
+                	objOut.writeObject(ret);
+                	reply = byteOut.toByteArray();
+                }
+=======
+>>>>>>> fddb2451ceefcf4c7e7a6830270f4cfc51e22b08
             }
 
             objOut.flush();
