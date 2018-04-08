@@ -59,8 +59,9 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
                 case PUT: {
                     K key = (K) objIn.readObject();
                     V value = (V) objIn.readObject();
-                    root.addNode(key.toString(), value.toString());
-                    V ret = value;
+                    
+                    V ret = (V) root.addNode(key.toString(), value.toString());
+                    
                     if (ret != null) {
                         objOut.writeObject(ret);
                         reply = byteOut.toByteArray();
@@ -77,6 +78,22 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
                         objOut.writeObject(ret);
                         reply = byteOut.toByteArray();
                     }
+
+                    break;
+                }
+
+                case EPHEMERAL: {
+                    K key = (K) objIn.readObject();
+                    V value = (V) objIn.readObject();
+
+                    V ret = (V) root.setNodeEphemeral(key.toString(), value.toString());
+
+                    if (ret != null) {
+                        objOut.writeObject(ret);
+                        reply = byteOut.toByteArray();
+                    }
+
+                    System.out.println("\nEphemeral Nodes: " + root.getEphemeralNodes());
 
                     break;
                 }
@@ -109,7 +126,7 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
             byte[] reply = new byte[0];
             BFTMapRequestType cmd = (BFTMapRequestType) objIn.readObject();
 
-            System.out.println("Ordered execution of a "+cmd+" from "+msgCtx.getSender());
+            System.out.println("Unordered execution of a "+cmd+" from "+msgCtx.getSender());
             
             switch (cmd) {
                 case GET: {

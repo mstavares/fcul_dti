@@ -11,6 +11,8 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
 
+import java.time.Instant;
+
 public class BFTMapInteractiveClient extends Thread {
 	
 	private static NodeWatcher watcher;
@@ -41,6 +43,7 @@ public class BFTMapInteractiveClient extends Thread {
         System.out.println("\nCommands:\n");
         System.out.println("\tPUT: Insert value into the map");
         System.out.println("\tSEQUENCIAL: Insert value into the map");
+        System.out.println("\tEPHEMERAL: Mark a node as ephemeral");
         System.out.println("\tGET: Retrieve value from the map");
         System.out.println("\tCHILDREN: Retrieve the size of the map");
         System.out.println("\tREMOVE: Removes the value associated with the supplied key");
@@ -68,9 +71,9 @@ public class BFTMapInteractiveClient extends Thread {
 
                 //invokes the op on the servers
               
-                bftMap.put(key, value);
+                String resp = bftMap.put(key, value);
+                System.out.println("\n"+resp+"\n");
 
-                System.out.println("\nkey-value pair added to the map\n");
             } else if (cmd.equalsIgnoreCase("GET")) {
 
                 //int key = 0;
@@ -107,6 +110,45 @@ public class BFTMapInteractiveClient extends Thread {
                 //invokes the op on the servers
                 String name = bftMap.putSequential(key, value);
                 System.out.print("A node with name " + name + " was created");
+
+            } else if (cmd.equalsIgnoreCase("EPHEMERAL")) {
+
+                try {
+                    System.out.print("Enter a node name: ");
+                    key = sc.nextLine();
+                    //key = sc.nextInt();
+                    //sc.nextLine();
+
+                } catch (NumberFormatException | InputMismatchException e) {
+                    System.out.println("\tThe key is supposed to be an integer!\n");
+                    continue;
+                }
+
+                Thread updateEphemeral = new Thread() {
+                    public void run() {
+                        try {
+                            while (true) {
+                                Thread.sleep(EphemeralNode.getHeartbeat());
+
+                                Instant instant = Instant.now();
+
+                                bftMap.setEphemeral(key, String.valueOf(instant.toEpochMilli()));
+
+                                //System.out.println("\nupdated timestamp on node " + key + "\n");
+                            }
+                        } catch(InterruptedException v) {
+                            System.out.println(v);
+                        }
+                    }  
+                };
+
+                Instant instant = Instant.now();
+
+                bftMap.setEphemeral(key, String.valueOf(instant.toEpochMilli()));
+
+                System.out.println("\n " + key + " marked as ephemeral\n");
+
+                updateEphemeral.start();
 
             } else if (cmd.equalsIgnoreCase("CHILDREN")) {
 
@@ -160,7 +202,6 @@ public class BFTMapInteractiveClient extends Thread {
             	
             } else if (cmd.equalsIgnoreCase("SIZE")) {
             
-
 				System.out.println("Size is: " + bftMap.size());
 
             } else if (cmd.equalsIgnoreCase("EXIT")) {
