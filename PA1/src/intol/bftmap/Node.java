@@ -26,13 +26,10 @@ public class Node implements Serializable {
         return nodes;
     }
 
-<<<<<<< HEAD
     public String getPath(){
     	return path;
     }
 
-=======
->>>>>>> fddb2451ceefcf4c7e7a6830270f4cfc51e22b08
     public String addNodeSequential(String path, String value) {
         for(int i = FIRST_SEQ; ; i++) {
             String sequentialPath = path + i;
@@ -137,10 +134,7 @@ public class Node implements Serializable {
         Node node = getNode(path);
         return node != null ? node.value : "null";
     }
-<<<<<<< HEAD
     
   
-=======
->>>>>>> fddb2451ceefcf4c7e7a6830270f4cfc51e22b08
 
 }
