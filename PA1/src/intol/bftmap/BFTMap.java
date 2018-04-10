@@ -137,13 +137,12 @@ public class BFTMap<K, V> implements Map<K, V> {
         }
     }
 
-    public V setEphemeral(K key, V value){
+    public V setEphemeral(K key){
         try {
             ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
             ObjectOutputStream objOut = new ObjectOutputStream(byteOut);
             objOut.writeObject(BFTMapRequestType.EPHEMERAL);
             objOut.writeObject(key);
-            objOut.writeObject(value);
 
             objOut.flush();
             byteOut.flush();

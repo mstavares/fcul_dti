@@ -15,7 +15,7 @@ public class Node implements Serializable {
 
     //START ephemeral implementation
     private static final int HEARTBEAT = 5000;
-    private TreeMap<String, String> ephemeralNodes = new TreeMap<>();
+    private TreeMap<String, Long> ephemeralNodes = new TreeMap<>();
     //END ephemeral implementation
 
     public Node() {}
@@ -38,7 +38,7 @@ public class Node implements Serializable {
     }
 
     //START ephemeral implementation
-    public TreeMap<String, String> getEphemeralNodes() {
+    public TreeMap<String, Long> getEphemeralNodes() {
         return ephemeralNodes;
     }
 
@@ -46,30 +46,27 @@ public class Node implements Serializable {
         return HEARTBEAT;
     }
 
-    public String setNodeEphemeral(String path, String timestamp) {
-        String[] folders = path.split("/");
-        for(int i = 0; i < folders.length; i++) {
-            String key = folders[i];
-            ephemeralNodes.put(key, timestamp);
+    public Boolean setNodeEphemeral(String path, long timestamp) {
+        if(getNode(path) != null) {
+            String[] folders = path.split("/");
+            for (int i = 0; i < folders.length; i++) {
+                String key = folders[i];
+                ephemeralNodes.put(key, timestamp);
+            }
+            return Boolean.TRUE;
         }
-
-        return path + "was marked as ephemeral";
-            
+        return Boolean.FALSE;
     }
 
-    public boolean checkEphemeralAlive(String path){
+    public boolean checkEphemeralAlive(String path, long currentTime){
         boolean alive = false;
 
         if(ephemeralNodes.containsKey(path)){
-            String ephemeralTimestamp = ephemeralNodes.get(path);
-
-            Instant instant = Instant.now();
-
-            if ((instant.toEpochMilli() - Long.parseLong(ephemeralTimestamp)) < HEARTBEAT){
+            long ephemeralTimestamp = ephemeralNodes.get(path);
+            if ((currentTime - ephemeralTimestamp) < HEARTBEAT){
                 alive = true;
             } else {
                 alive = false;
-
                 ephemeralNodes.remove(path);
                 deleteNode(path);
             }
@@ -186,14 +183,13 @@ public class Node implements Serializable {
         return getNode(motherPath.toString());
     }
 
-    public String getValue(String path) {
+    public String getValue(String path, long currentTime) {
         if(ephemeralNodes.containsKey(path)){
-            if(!checkEphemeralAlive(path)){
+            if(!checkEphemeralAlive(path, currentTime)){
                 return "node no longer alive, deleting...";
             }
         }
-
         Node node = getNode(path);
-        return node != null ? node.value : "null";
+        return node != null ? node.value : "this node does not exist";
     }
 }

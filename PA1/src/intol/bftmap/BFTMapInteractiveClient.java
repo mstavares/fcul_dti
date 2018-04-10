@@ -16,11 +16,10 @@ import java.time.Instant;
 public class BFTMapInteractiveClient extends Thread {
 	
 	private static NodeWatcher watcher;
+	private static EphemeralNodeManager ephemeralNodeManager;
 	
 	public void run() {
-		System.out.println("Starting notification thread...");
 		while(true) {
-			System.out.println("Going to check for updates");
 			watcher.checkForUpdates();
 			try {
 				Thread.sleep(10000);
@@ -36,6 +35,7 @@ public class BFTMapInteractiveClient extends Thread {
         int clientId = (args.length > 0) ? Integer.parseInt(args[0]) : 1001;
         BFTMap<String, String> bftMap = new BFTMap<>(clientId);
         watcher = new NodeWatcher(bftMap);
+        ephemeralNodeManager = new EphemeralNodeManager(bftMap);
         (new BFTMapInteractiveClient()).start();
 
         Scanner sc = new Scanner(System.in);
@@ -113,42 +113,24 @@ public class BFTMapInteractiveClient extends Thread {
 
             } else if (cmd.equalsIgnoreCase("EPHEMERAL")) {
 
+                //String key;
                 try {
                     System.out.print("Enter a node name: ");
                     key = sc.nextLine();
-                    //key = sc.nextInt();
                     //sc.nextLine();
-
-                } catch (NumberFormatException | InputMismatchException e) {
+                } catch (NumberFormatException e) {
                     System.out.println("\tThe key is supposed to be an integer!\n");
                     continue;
                 }
+                System.out.print("Enter an alpha-numeric value: ");
+                String value = sc.nextLine();
 
-                Thread updateEphemeral = new Thread() {
-                    public void run() {
-                        try {
-                            while (true) {
-                                Thread.sleep(EphemeralNode.getHeartbeat());
+                //invokes the op on the servers
 
-                                Instant instant = Instant.now();
+                bftMap.put(key, value);
+                ephemeralNodeManager.addEphemeral(key);
+                System.out.println("\n " + key + " was created as ephemeral\n");
 
-                                bftMap.setEphemeral(key, String.valueOf(instant.toEpochMilli()));
-
-                                //System.out.println("\nupdated timestamp on node " + key + "\n");
-                            }
-                        } catch(InterruptedException v) {
-                            System.out.println(v);
-                        }
-                    }  
-                };
-
-                Instant instant = Instant.now();
-
-                bftMap.setEphemeral(key, String.valueOf(instant.toEpochMilli()));
-
-                System.out.println("\n " + key + " marked as ephemeral\n");
-
-                updateEphemeral.start();
 
             } else if (cmd.equalsIgnoreCase("CHILDREN")) {
 

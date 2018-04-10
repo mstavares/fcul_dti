@@ -84,9 +84,7 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
 
                 case EPHEMERAL: {
                     K key = (K) objIn.readObject();
-                    V value = (V) objIn.readObject();
-
-                    V ret = (V) root.setNodeEphemeral(key.toString(), value.toString());
+                    V ret = (V) root.setNodeEphemeral(key.toString(), msgCtx.getTimestamp());
 
                     if (ret != null) {
                         objOut.writeObject(ret);
@@ -131,7 +129,7 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
             switch (cmd) {
                 case GET: {
                     K key = (K) objIn.readObject();
-                    V ret =  (V) root.getValue(key.toString());
+                    V ret =  (V) root.getValue(key.toString(), msgCtx.getTimestamp());
                     if (ret != null) {
                         objOut.writeObject(ret);
                         reply = byteOut.toByteArray();
