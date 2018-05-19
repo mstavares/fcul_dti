@@ -68,6 +68,18 @@ contract AcademicService {
     }
     
     /**
+     * As escolas podem assignar professores aos cursos dentro
+     * da primeira semana após a criação do contrato.
+     */
+    function assignProfessor(uint courseId, address professor) public {
+        if(isContactValid() && isProfessorAssignationAvailable()) {
+            if(msg.sender == school && courseId < courses.length) {
+                    courses[courseId].professor = professor;
+            }
+        }
+    }
+    
+    /**
      * Esta função regista o aluno que a invocou no curso em parâmetro.
      */ 
     function registerOnCourse(uint courseId) public payable {
@@ -92,18 +104,6 @@ contract AcademicService {
                     courses[courseId].grades[msg.sender] = -2;
                     performPayment(msg.sender, school, 0.1 ether);
                 }
-            }
-        }
-    }
-    
-    /**
-     * As escolas podem assignar professores aos cursos dentro
-     * da primeira semana após a criação do contrato.
-     */
-    function assignProfessor(uint courseId, address professor) public {
-        if(isContactValid() && isProfessorAssignationAvailable()) {
-            if(msg.sender == school && courseId < courses.length) {
-                    courses[courseId].professor = professor;
             }
         }
     }
