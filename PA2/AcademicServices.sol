@@ -6,21 +6,34 @@ pragma solidity ^0.4.21;
 
 contract AcademicService {
     
+    /**
+     * Esta estrutura cria uma abstração relativa à entidade curso
+     */ 
     struct Course {
         uint8 credits;
         address professor;
         mapping(address => int) grades;
     }
     
+    /**
+     * Esta estrutura cria uma abstração relativa à entidade estudante
+     */ 
     struct Student {
         address student;
         uint8 registeredCredits;
         uint8 approvedCredits;
     }
     
+    /** Esta variavel guarda o endereço da escola */
     address public school;
-    uint256 public start; 
+    
+    /** Esta variabel guarda o momento em que o curso começou */
+    uint256 public start;
+    
+    /** Este array guarda o conjunto de cursos criados pela escola */
     Course[]public courses;
+    
+    /** Este mapping criam uma relação entre o endereço e um estudante */
     mapping(address => Student) public students;
     
     /**
@@ -40,15 +53,78 @@ contract AcademicService {
         coursesSetup(courseCredits);
     }
     
+
     /**
-     * Vai criar os cursos que têm 3 ou 6 créditos
+     * As escolas chama esta função para adicionar novos alunos.
+     * Esta inserção sõ é possível dentro das primeiras 4 semanas
+     * da criação do contrato.
      */
-    function studentsSetup(address[] studentAddresses) private {
-        for(uint i = 0; i < studentAddresses.length; i++) {
-            students[studentAddresses[i]] = Student(studentAddresses[i], 0, 0);
+    function addStudent(address studentAddress) public {
+        if(isContactValid() && isStudentSubmissionAvailable()) {
+            if(msg.sender == school && students[studentAddress].student == 0) {
+                students[studentAddress] = Student(studentAddress, 0, 0);
+            }
         }
     }
     
+    /**
+     * Esta função regista o aluno que a invocou no curso em parâmetro.
+     */ 
+    function registerOnCourse(uint courseId) public payable {
+        if(isContactValid()) {
+            if(students[msg.sender].student != 0 && courseId < courses.length) {
+                courses[courseId].grades[msg.sender] = -1;
+                uint64 cost = computeCost(courseId);
+                registerStudent(cost, courseId);
+            }
+        }
+    }
+    
+    /**
+     * Esta função é invocada pelos alunos de forma a se submeterem a uma reavaliação.
+     * O custo por esta operação é de 0.1 ether.
+     */
+    function askReavaluation(uint courseId) public payable {
+        if(isContactValid()) {
+            if(students[msg.sender].student != 0) {
+                int grade = courses[courseId].grades[msg.sender];
+                if(!isPassed(grade) && grade >= 0) {
+                    courses[courseId].grades[msg.sender] = -2;
+                    performPayment(msg.sender, school, 0.1 ether);
+                }
+            }
+        }
+    }
+    
+    /**
+     * As escolas podem assignar professores aos cursos dentro
+     * da primeira semana após a criação do contrato.
+     */
+    function assignProfessor(uint courseId, address professor) public {
+        if(isContactValid() && isProfessorAssignationAvailable()) {
+            if(msg.sender == school && courseId < courses.length) {
+                    courses[courseId].professor = professor;
+            }
+        }
+    }
+
+    /**
+     * Esta função atribui notas a um determinado conjunto de alunos.
+     * As notas dos alunos estão correlacionadas relativamente ao seu índice.
+     */
+    function assignGrade(uint courseId, address[] evaluatedStudents, int[] grades) public payable {
+        if(isContactValid()) {
+            if(courses[courseId].professor == msg.sender && evaluatedStudents.length == grades.length) {
+                for(uint i = 0; i < evaluatedStudents.length; i++) {
+                    if(isReavaluation(courses[courseId].grades[evaluatedStudents[i]])) {
+                        reavaluateStudent(courseId, grades[i]);
+                    }
+                    assignGrade(courseId, evaluatedStudents[i], grades[i]);
+                }
+            }
+        }
+    }
+
     /**
      * Vai criar os cursos que têm 3 ou 6 créditos
      */
@@ -61,35 +137,11 @@ contract AcademicService {
     }
     
     /**
-     * As escolas chama esta função para adicionar novos alunos.
-     * Esta inserção sõ é possível dentro das primeiras 4 semanas
-     * da criação do contrato.
+     * Vai criar os cursos que têm 3 ou 6 créditos
      */
-    function addStudent(address studentAddress) public {
-        if(msg.sender == school && now < (start + 4 weeks) && students[studentAddress].student == 0) {
-            students[studentAddress] = Student(studentAddress, 0, 0);
-        }
-    }
-    
-    /**
-     * As escolas podem assignar professores aos cursos dentro
-     * da primeira semana após a criação do contrato.
-     */
-    function assignProfessor(uint courseId, address professor) public {
-        if(msg.sender == school && courseId < courses.length &&
-            courses[courseId].professor != 0 && now < (start + 1 weeks)) {
-                courses[courseId].professor = professor;
-        }
-    }
-    
-    /**
-     * Esta função regista o aluno que a invocou no curso em parâmetro.
-     */ 
-    function registerOnCourse(uint courseId) public payable {
-        if(students[msg.sender].student != 0 && courseId < courses.length) {
-            courses[courseId].grades[msg.sender] = -1;
-            uint64 cost = computeCost(courseId);
-            registerStudent(cost, courseId);
+    function studentsSetup(address[] studentAddresses) private {
+        for(uint i = 0; i < studentAddresses.length; i++) {
+            students[studentAddresses[i]] = Student(studentAddresses[i], 0, 0);
         }
     }
     
@@ -107,25 +159,24 @@ contract AcademicService {
     }
     
     /**
+     * Esta função processa os pagamentos e devolve o excedente da operação
+     */
+    function performPayment(address sender, address receiver, uint ammount) private {
+        if(msg.sender.balance >= ammount) {
+            uint refound = msg.value - ammount;
+            receiver.transfer(ammount);
+            sender.transfer(refound);
+        }
+    }
+    
+    /**
      * Inscreve o aluno no curso, incrementa os créditos e finalmente faz
      * o pagamento relativament ao custo da inscrição.
      */ 
     function registerStudent(uint64 cost, uint courseId) private {
         courses[courseId].grades[msg.sender] = -1;
         students[msg.sender].registeredCredits += courses[courseId].credits;
-        school.transfer(cost);
-    }
-    
-    /**
-     * Esta função atribui notas a um determinado conjunto de alunos.
-     * As notas dos alunos estão correlacionadas relativamente ao seu índice.
-     */
-    function assignGrade(uint courseId, address[] evaluatedStudents, int[] grades) public {
-        if(courses[courseId].professor == msg.sender && evaluatedStudents.length == grades.length) {
-            for(uint i = 0; i < evaluatedStudents.length; i++) {
-                assignGrade(courseId, evaluatedStudents[i], grades[i]);
-            }
-        }
+        performPayment(msg.sender, school, cost);
     }
     
     /**
@@ -144,11 +195,61 @@ contract AcademicService {
     }
     
     /**
+     * Esta função vai verificar se o aluno que foi submetido a reavaliação
+     * foi aprovado. Se sim, o professor recebe 0.05 como prémio
+     */
+    function reavaluateStudent(uint courseId, int grade) private {
+        if(isPassed(grade)) {
+            performPayment(school, courses[courseId].professor, 0.05 ether);
+        }
+    }
+    
+    /**
      * Esta função retorna true se o aluno aprovou, caso contrário
      * retornará false.
      */ 
     function isPassed(int grade) private pure returns(bool) {
         return grade >= 10;
+    }
+    
+    /**
+     * Esta função retorna true se o aluno estiver em reavaliação, caaso contrário
+     * retornará false.
+     */
+    function isReavaluation(int grade) private pure returns(bool) {
+        return grade == -2;
+    }
+    
+    /**
+    * Esta funcao retorna true se a validade ainda se verificar, caso contrário
+    * retornará false.
+    */ 
+    function isTimeValid(uint validity) private view returns(bool) {
+    now < (start + validity);
+    }
+    
+    /**
+    * Esta funcao verifica se o contrato ainda está dentro da validade,
+    * 1 ano -> 52 semanas
+    */
+    function isContactValid() private view returns(bool) {
+     return isTimeValid(52 weeks);
+    }
+    
+    /**
+    * Esta retorna true se os alunos ainda puderem ser inscritos, caso contrário
+    * retornará false.
+    */
+    function isStudentSubmissionAvailable() private view returns(bool) {
+     return isTimeValid(4 weeks);
+    }
+    
+    /**
+    * Esta funcao retorna true se a escola ainda puder atribuir um professor
+    * ao curso, caso contrário retornará false
+    */
+    function isProfessorAssignationAvailable() private view returns(bool) {
+      return isTimeValid(1 weeks);
     }
     
     /**
@@ -161,11 +262,4 @@ contract AcademicService {
         }
     }
     
-    // quem chama -> aluno
-    // paga 0.1 Eth
-    function askReavaluation(uint courseId) public payable {
-        if(courses[courseId].grades[msg.sender] > 0) {
-            
-        }
-    }
 }
