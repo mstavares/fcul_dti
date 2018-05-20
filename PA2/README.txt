@@ -28,6 +28,12 @@
 # Esta atribuição só é possível de ser feita dentro da primeira semana da validade do contrato.
 --> function assignProfessor(uint courseId, address professor) public
 
+# Esta função vai processar os pagamentos relativos ao trabalho extra dos
+# professores. Por acada aluno que reprovado e posteriormente foi aprovado
+# em reavaliação, o professor ganha 0.05 ether. É a escola que processa este pagamento.
+# Como argumento esta função recebe o address do professor que vai receber o pagamento.
+--> function payForApprovals(address professor) public payable
+
 #### PROFESSOR ####
 
 # Esta função permite ao professor lançar as notas dos alunos relativas a um determinado curso.

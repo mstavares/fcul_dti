@@ -1,8 +1,11 @@
 pragma solidity ^0.4.21;
 
-// grades  0 nao inscrito
-// grades -1 nao avaliado
-// grades -2 reavaliação
+/***************************
+ * Trabalho realizado por:
+ * Miguel Tavares - 50691
+ * Sara Nascimento - 45678
+ * Nuno Nelas - 51691
+ ***************************/
 
 contract AcademicService {
     
@@ -35,6 +38,13 @@ contract AcademicService {
     
     /** Este mapping criam uma relação entre o endereço e um estudante */
     mapping(address => Student) public students;
+    
+    /** 
+     * Este mapping é utilizador para saber quantos alunos um dado professor
+     * aprovou depois de uma reprovação. De seguida, a escola vai usar este
+     * mapping para processar os pagamentos pelo trabalho extra.
+     */
+    mapping(address => uint) public extraWorkApprovals;
     
     /**
      * Este evento é invocado quando um aluno atinge 60 créditos
@@ -84,7 +94,7 @@ contract AcademicService {
      */ 
     function registerOnCourse(uint courseId) public payable {
         if(isContactValid()) {
-            if(students[msg.sender].student != 0 && courseId < courses.length) {
+            if(students[msg.sender].student != 0 && courses[courseId].grades[msg.sender] == 0 && courseId < courses.length) {
                 courses[courseId].grades[msg.sender] = -1;
                 uint64 cost = computeCost(courseId);
                 registerStudent(cost, courseId);
@@ -117,7 +127,7 @@ contract AcademicService {
             if(courses[courseId].professor == msg.sender && evaluatedStudents.length == grades.length) {
                 for(uint i = 0; i < evaluatedStudents.length; i++) {
                     if(isReavaluation(courses[courseId].grades[evaluatedStudents[i]])) {
-                        reavaluateStudent(courseId, grades[i]);
+                        reavaluateStudent(grades[i]);
                     }
                     assignGrade(courseId, evaluatedStudents[i], grades[i]);
                 }
@@ -161,14 +171,14 @@ contract AcademicService {
     /**
      * Esta função processa os pagamentos e devolve o excedente da operação
      */
-    function performPayment(address sender, address receiver, uint ammount) private {
-        if(msg.sender.balance >= ammount) {
-            uint refound = msg.value - ammount;
-            receiver.transfer(ammount);
+    function performPayment(address sender, address receiver, uint amount) private {
+        if(sender.balance >= amount) {
+            uint refound = msg.value - amount;
+            receiver.transfer(amount);
             sender.transfer(refound);
         }
     }
-    
+
     /**
      * Inscreve o aluno no curso, incrementa os créditos e finalmente faz
      * o pagamento relativament ao custo da inscrição.
@@ -195,15 +205,34 @@ contract AcademicService {
     }
     
     /**
-     * Esta função vai verificar se o aluno que foi submetido a reavaliação
-     * foi aprovado. Se sim, o professor recebe 0.05 como prémio
+     * Esta função vai processar os pagamentos relativos ao trabalho extra dos
+     * professores. Por acada aluno que reprovado e posteriormente foi aprovado
+     * em reavaliação, o professor ganha 0.05 ether. É a escola que processa este
+     * pagamento.
+     * Como argumento esta função recebe o address do professor que vai receber
+     * o pagamento.
      */
-    function reavaluateStudent(uint courseId, int grade) private {
-        if(isPassed(grade)) {
-            performPayment(school, courses[courseId].professor, 0.05 ether);
+    function payForApprovals(address professor) public payable {
+        if(msg.sender == school) {
+            uint amount = extraWorkApprovals[professor] * 0.05 ether;
+            if(school.balance >= amount) {
+                performPayment(school, professor, amount);
+                extraWorkApprovals[professor] = 0;
+            }
         }
     }
-    
+     
+    /**
+     * Esta função verifica se o aluno reprovado passou. Se sim, incrementa o
+     * número de alunos aprovados professor em questão
+     * Como argumento esta função recebe a nota do aluno em avaliação.
+     */
+    function reavaluateStudent(int grade) private constant {
+        if(isPassed(grade)) {
+            extraWorkApprovals[msg.sender] = ++extraWorkApprovals[msg.sender];
+        }
+    }
+
     /**
      * Esta função retorna true se o aluno aprovou, caso contrário
      * retornará false.
@@ -224,32 +253,32 @@ contract AcademicService {
     * Esta funcao retorna true se a validade ainda se verificar, caso contrário
     * retornará false.
     */ 
-    function isTimeValid(uint validity) private view returns(bool) {
-    now < (start + validity);
+    function isTimeValid(uint validity) private returns(bool) {
+        return now < (start + validity);
     }
     
     /**
     * Esta funcao verifica se o contrato ainda está dentro da validade,
     * 1 ano -> 52 semanas
     */
-    function isContactValid() private view returns(bool) {
-     return isTimeValid(52 weeks);
+    function isContactValid() private returns(bool) {
+        return isTimeValid(52 weeks);
     }
     
     /**
     * Esta retorna true se os alunos ainda puderem ser inscritos, caso contrário
     * retornará false.
     */
-    function isStudentSubmissionAvailable() private view returns(bool) {
-     return isTimeValid(4 weeks);
+    function isStudentSubmissionAvailable() private returns(bool) {
+        return isTimeValid(4 weeks);
     }
     
     /**
     * Esta funcao retorna true se a escola ainda puder atribuir um professor
     * ao curso, caso contrário retornará false
     */
-    function isProfessorAssignationAvailable() private view returns(bool) {
-      return isTimeValid(1 weeks);
+    function isProfessorAssignationAvailable() private returns(bool) {
+        return isTimeValid(1 weeks);
     }
     
     /**
